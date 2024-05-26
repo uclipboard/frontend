@@ -1,215 +1,192 @@
 <template>
 
-    <v-textarea label="clipboard text" v-model="text" counter></v-textarea>
+    <v-textarea label="clipboard text" v-model="inputText" counter clearable></v-textarea>
     <v-row no-gutters>
-        <v-col cols="12" sm="6">
-            <v-btn :loading="loading" text="push" @click="push" block></v-btn>
-        </v-col>
-        <v-col cols="12" sm="6">
-            <v-btn :loading="loading" text="pull" @click="pull" block></v-btn>
-        </v-col>
+            <v-col class="mr-2">
+                <v-btn :loading="textActionLoading" text="push" @click="push" block></v-btn>
+            </v-col>
+            <v-col class="ml-2">
+                <v-btn :loading="textActionLoading" text="pull" @click="pull" block></v-btn>
+            </v-col>
     </v-row>
 
 
     <v-form validate-on="submit lazy" class="mt-4" @submit.prevent="upload">
         <v-file-input label="Select file" v-model="selectedFile" variant="underlined" show-size></v-file-input>
-        <v-btn :loading="uploadLoading" text="upload" type="upload" block></v-btn>
+        <v-btn :loading="uploadFileLoading" text="upload" type="upload" block></v-btn>
     </v-form>
 
 
     <v-list lines="one" class="mt-4">
         <v-list-item v-for="i in clipboardsHistory" :prepend-icon="i.type == 'text' ? 'mdi-text-long' : 'mdi-file'"
-            :key="i" :title="`${i.hostname} at ${i.date}`" :subtitle="i.content" @click="copy(i)"></v-list-item>
+            :key="i" :title="`${i.hostname} at ${i.date.toLocaleString()}`" :subtitle="i.content"
+            @click="copy(i)"></v-list-item>
     </v-list>
-    <v-snackbar v-model="snackbar">
-        {{ snackbarText }}
+    <Notice ref="noticeRef" />
 
-        <template v-slot:actions>
-            <v-btn color="blue" variant="text" @click="snackbar = false">
-                Close
-            </v-btn>
-        </template>
-    </v-snackbar>
 
 </template>
+<script setup>
+import { onMounted, onUnmounted, ref } from 'vue';
+import Notice from './Notice'
 
-<script>
-import config from '@/plugins/config';
+import config from '@/assets/config';
+import { buildUploadResponseText, buildLocalClipboard, copyToClipoard, arrayIncludeAClipboard, buildRemoteClipboard } from '@/assets/utils'
+import { ErrUnAuth, sendHistoryRequest, sendPullRequest, sendPushRequest, sendUploadRequest } from '@/assets/request';
 
-function buildClipboard(c) {
-    let val = {
-        content: c.content,
-        date: new Date(c.ts),
-        hostname: c.hostname,
-        type: c.content_type
+
+const textActionLoading = ref(false)
+const inputText = ref("")
+const selectedFile = ref(null)
+const uploadFileLoading = ref(false)
+const clipboardsHistory = ref([
+    {
+        content: "hello world!",
+        type: "text",
+        hostname: "uclipboard",
+        date: "now",
     }
-    return val
+])
+const noticeRef = ref(null);
+
+let pullTimerFd = null
+
+
+async function snackbar(text) {
+    noticeRef.value.openSnackbar(text)
 }
-// https://gist.github.com/n1k0/b17b5c248a3ee1df99acaae000eccae4
-async function copyToClipoard(text) {
-    if ("clipboard" in navigator && typeof navigator.clipboard.writeText === "function") {
-        // Chrome
-        return navigator.clipboard.writeText(text)
-            .then(() => true)
-            .catch(() => false);
+async function dialog(text, title = "warning") {
+    noticeRef.value.openDialog(title, text)
+
+}
+async function copy(i) {
+    if (i.type != "text") {
+        copyToClipoard(`${config.API_PREFIX}/${config.API_VERSION}/${config.API_DOWNLOAD}/${i.content}?token=${localStorage.getItem(config.LOCAL_STORAGE_TOKEN_NAME)}`);
+        snackbar("File url has been copied, you can download it by yourself.")
     } else {
-        // Firefox
-        const input = document.createElement("input");
-        input.value = text;
-        input.style.position = "fixed";
-        input.style.top = "-2000px";
-        document.body.appendChild(input);
-        input.select();
+        copyToClipoard(i.content);
+        snackbar(`'${i.content}' copied!`)
+
+    }
+
+}
+
+function handleUnauthError(e) {
+    if (e instanceof ErrUnAuth) {
+        dialog("Token is incorrect! After the correct token is entered, click 'pull' to reload data.")
+        if (pullTimerFd !== null) {
+            clearInterval(pullTimerFd)
+            pullTimerFd = null
+            console.debug("remove pull timer")
+        }
+        return
+    } else {
+        throw e
+    }
+
+}
+async function upload() {
+
+    uploadFileLoading.value = true
+    if (selectedFile.value === null) {
+        dialog("file is empty!")
+    } else {
+        let uploadResponse
         try {
-            return Promise.resolve(document.execCommand("copy"))
-                .then(res => {
-                    document.body.removeChild(input);
-                    return res;
-                });
-        } catch (err) {
-            return Promise.resolve(false);
+            uploadResponse = await sendUploadRequest(selectedFile.value)
+        } catch (e) {
+            handleUnauthError(e)
+            return
         }
+        dialog(buildUploadResponseText(uploadResponse), "file infomation")
+
+        selectedFile.value = null
     }
+    uploadFileLoading.value = false
 }
+async function push() {
+    console.debug(inputText.value)
+    if (inputText.value === "") {
+        dialog("Input clipboard is empty!")
+        return
+    }
+    textActionLoading.value = true
+    console.debug(`upload ${inputText.value}`)
+    const requestClipboardData = buildRemoteClipboard(inputText.value)
+    console.debug(requestClipboardData)
+    let responseClipboardPushRequest
+    try {
+        responseClipboardPushRequest = await sendPushRequest(requestClipboardData)
+    } catch (e) {
+        handleUnauthError(e)
+        return
+    }
 
+    console.debug(JSON.stringify(responseClipboardPushRequest))
 
+    inputText.value = ""
+    textActionLoading.value = false
+    snackbar("Push clipboard success!")
+    pull()
+}
+async function pull() {
+    console.debug("pull data")
+    textActionLoading.value = true
+    if (pullTimerFd === null) {
+        console.debug("reopen pull timer")
+        getHistory()
+        pullTimerFd = setInterval(getLatestUpdate, config.PULL_INTERVAL_MS)
+    }
+    await getLatestUpdate()
+    textActionLoading.value = false
+}
+async function getLatestUpdate() {
+    console.debug("update clipboard history")
+    let responesClipboardLatest
+    try {
+        responesClipboardLatest = await sendPullRequest()
+    } catch (e) {
+        handleUnauthError(e)
+        return
+    }
+    console.debug(responesClipboardLatest)
+    responesClipboardLatest.forEach(e => {
+        let clipboard = buildLocalClipboard(e)
+        if (!arrayIncludeAClipboard(clipboardsHistory.value, clipboard)) {
+            console.debug(`push ${JSON.stringify(clipboard)}`)
 
-
-function arrIncludeClipboard(arr, c) {
-    return arr.some(i => {
-        return i.content === c.content &&
-            i.date.getTime() == c.date.getTime() &&
-            i.hostname == c.hostname && i.type == c.type
+            clipboardsHistory.value = [clipboard, ...clipboardsHistory.value]
+        }
+    });
+}
+async function getHistory() {
+    clipboardsHistory.value = []
+    let responesClipboardHostory;
+    try {
+        responesClipboardHostory = await sendHistoryRequest()
+    } catch (e) {
+        handleUnauthError(e)
+        return
+    }
+    console.debug(responesClipboardHostory)
+    responesClipboardHostory.forEach(e => {
+        clipboardsHistory.value.push(buildLocalClipboard(e))
     })
+
 }
-export default {
-    data: vm => ({
-        loading: false,
-        snackbar: false,
-        snackbarText: "",
-        text: "",
-        selectedFile: null,
-        uploadLoading: false,
-        pullTimerFd: null,
-        clipboardsHistory: [
-            {
-                content: "hello world!",
-                type: "text",
-                hostname: "uclipboard",
-                date: "now",
-            }
-        ]
-    }),
 
-    methods: {
-        async copy(i) {
-            if (i.type != "text") {
-                this.snackbarText = `'${i.content}' download URL copied!`
-                copyToClipoard(`${config.API_PREFIX}/${config.API_VERSION}/${config.API_DOWNLOAD}/${i.content}`);
-            } else {
-                this.snackbarText = `'${i.content}' copied!`
-            copyToClipoard(i.content);
+onMounted(_ => {
+    getHistory()
+    pullTimerFd = setInterval(getLatestUpdate, config.PULL_INTERVAL_MS)
 
-            }
-            this.snackbar = true
+})
 
-        },
-        async upload(event) {
-            // TODO:error handler
-
-            this.uploadLoading = true
-            if (this.selectedFile == null) {
-                this.snackbarText = "file is not select!"
-                this.snackbar = true
-            } else {
-                let token = localStorage.getItem(config.LOCAL_STORAGE_TOKEN_NAME)
-
-                const formData = new FormData();
-
-                formData.append('file', this.selectedFile);
-
-                let uploadResponse = await (await fetch(`${config.API_PREFIX}/${config.API_VERSION}/${config.API_UPLOAD}`, {
-                    method: 'POST',
-                    body: formData,
-                    headers:{
-                        "hostname":"browser"
-                    }
-                })).json()
-
-                this.snackbarText = JSON.stringify(uploadResponse)
-                this.snackbar = true
-                this.selectedFile = null
-            }
-            this.uploadLoading = false
-        },
-        async push() {
-            // TODO:error handler
-            if(this.text == ""){
-                this.snackbarText = "input is empty!"
-                this.snackbar = true
-                return 
-            }
-            this.loading = true
-            console.log(`upload ${this.text}`)
-            const requestClipboardData = {
-                ts: new Date().getTime(),
-                content: this.text,
-                hostname: "brower",
-                content_type: "text"
-            }
-            console.log(requestClipboardData)
-            await fetch(`${config.API_PREFIX}/${config.API_VERSION}/${config.API_PUSH}`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(requestClipboardData)
-            })
-            this.text = ""
-            // use snakebar when success
-            this.loading = false
-            this.pull()
-        },
-        async pull() {
-            console.log("pull data")
-            this.loading = true
-
-            this.update()
-            this.loading = false
-        },
-        async update() {
-            console.log("update clipboard history")
-
-            // TODO:error handler
-            let responesClipboardLatest = (await (await fetch(`${config.API_PREFIX}/${config.API_VERSION}/${config.API_PULL}`)).json()).data
-            // console.log(responesClipboardLatest)
-            responesClipboardLatest.forEach(e => {
-                let newClipboard = buildClipboard(e)
-                if (!arrIncludeClipboard(this.clipboardsHistory, newClipboard)) {
-                    console.log(`push ${JSON.stringify(newClipboard)}`)
-
-                    this.clipboardsHistory = [newClipboard, ...this.clipboardsHistory]
-                }
-            });
-        },
-        async getHistory() {
-            this.clipboardsHistory = []
-            // TODO:error handler
-            let responesClipboardHostory = (await (await fetch(`${config.API_PREFIX}/${config.API_VERSION}/${config.API_HISTORY}`)).json()).data
-            console.log(responesClipboardHostory)
-            responesClipboardHostory.forEach(e => {
-                this.clipboardsHistory.push(buildClipboard(e))
-            })
-
-        }
-    },
-    mounted: function () {
-        this.getHistory()
-        this.pullTimerFd = setInterval(this.update, config.PULL_INTERVAL_MS)
-
-    },
-    unmounted: function () {
-        clearInterval(this.pullTimerFd)
+onUnmounted(_ => {
+    if (pullTimerFd !== null) {
+        clearInterval(pullTimerFd)
+        pullTimerFd = null
     }
-}
+})
+
+
 </script>

@@ -6,7 +6,7 @@
   </v-form>
 </template>
 <script>
-import config from '@/plugins/config';
+import config from '@/assets/config';
 import { MD5 } from 'crypto-js';
 export default {
   data: vm => ({
