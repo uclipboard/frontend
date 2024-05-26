@@ -6,9 +6,15 @@
             <v-btn :loading="loading" text="push" @click="push" block></v-btn>
         </v-col>
         <v-col cols="12" sm="6">
-            <v-btn class="ml-4" :loading="loading" text="pull" @click="pull" block></v-btn>
+            <v-btn :loading="loading" text="pull" @click="pull" block></v-btn>
         </v-col>
     </v-row>
+
+
+    <v-form validate-on="submit lazy" class="mt-4" @submit.prevent="upload">
+        <v-file-input label="Select file" v-model="selectedFile" variant="underlined" show-size></v-file-input>
+        <v-btn :loading="uploadLoading" text="upload" type="upload" block></v-btn>
+    </v-form>
 
 
     <v-list lines="one" class="mt-4">
@@ -82,6 +88,8 @@ export default {
         snackbar: false,
         snackbarText: "",
         text: "",
+        selectedFile: null,
+        uploadLoading: false,
         pullTimerFd: null,
         clipboardsHistory: [
             {
@@ -95,24 +103,58 @@ export default {
 
     methods: {
         async copy(i) {
-            copyToClipoard(i.content);
             if (i.type != "text") {
-                this.snackbarText = `'${i.content}' filename copied, download it in file panel!`
+                this.snackbarText = `'${i.content}' download URL copied!`
+                copyToClipoard(`${config.API_PREFIX}/${config.API_VERSION}/${config.API_DOWNLOAD}/${i.content}`);
             } else {
                 this.snackbarText = `'${i.content}' copied!`
+            copyToClipoard(i.content);
+
             }
             this.snackbar = true
 
         },
+        async upload(event) {
+            // TODO:error handler
 
+            this.uploadLoading = true
+            if (this.selectedFile == null) {
+                this.snackbarText = "file is not select!"
+                this.snackbar = true
+            } else {
+                let token = localStorage.getItem(config.LOCAL_STORAGE_TOKEN_NAME)
+
+                const formData = new FormData();
+
+                formData.append('file', this.selectedFile);
+
+                let uploadResponse = await (await fetch(`${config.API_PREFIX}/${config.API_VERSION}/${config.API_UPLOAD}`, {
+                    method: 'POST',
+                    body: formData,
+                    headers:{
+                        "hostname":"browser"
+                    }
+                })).json()
+
+                this.snackbarText = JSON.stringify(uploadResponse)
+                this.snackbar = true
+                this.selectedFile = null
+            }
+            this.uploadLoading = false
+        },
         async push() {
             // TODO:error handler
+            if(this.text == ""){
+                this.snackbarText = "input is empty!"
+                this.snackbar = true
+                return 
+            }
             this.loading = true
             console.log(`upload ${this.text}`)
             const requestClipboardData = {
                 ts: new Date().getTime(),
                 content: this.text,
-                hostname: "web_brower",
+                hostname: "brower",
                 content_type: "text"
             }
             console.log(requestClipboardData)

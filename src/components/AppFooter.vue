@@ -5,10 +5,16 @@
       :key="item.title"
       :href="item.href"
       :title="item.title"
+      :icon="item.icon"
       class="d-inline-block mx-2 social-link"
       rel="noopener noreferrer"
       target="_blank"
     >
+    <v-icon
+        :icon="item.icon"
+        :size="item.icon === '$vuetify' ? 24 : 16"
+      />
+
     </a>
 
     <div

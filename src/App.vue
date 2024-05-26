@@ -12,10 +12,8 @@
       <v-navigation-drawer v-model="drawer" :location="$vuetify.display.mobile ? 'bottom' : undefined" temporary>
         <v-list lines="one">
 
-          <v-list-item prepend-icon="mdi-history" title="history" subtitle="history manager"
+          <v-list-item prepend-icon="mdi-history" title="history" subtitle="uclipboard manager"
             @click="tab = 'history'"></v-list-item>
-          <v-list-item prepend-icon="mdi-file-document" title="file" subtitle="file manager"
-            @click="tab = 'file'"></v-list-item>
           <v-list-item prepend-icon="mdi-key" title="token" subtitle="token manager"
             @click="tab = 'token'"></v-list-item>
         </v-list>
@@ -25,10 +23,6 @@
       <v-tabs-window class="pa-4 mx-auto" v-model="tab">
         <v-tabs-window-item value="history">
           <History />
-        </v-tabs-window-item>
-
-        <v-tabs-window-item value="file">
-          <FileManager />
         </v-tabs-window-item>
 
         <v-tabs-window-item value="token">
