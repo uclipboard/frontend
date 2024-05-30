@@ -61,7 +61,8 @@ async function dialog(text, title = "warning") {
 }
 async function copy(i) {
     if (i.type != "text") {
-        copyToClipoard(`${config.API_PREFIX}/${config.API_VERSION}/${config.API_DOWNLOAD}/${i.content}?token=${localStorage.getItem(config.LOCAL_STORAGE_TOKEN_NAME)}`);
+        let webSitePrefix = window.location.origin
+        copyToClipoard(`${webSitePrefix}${config.API_PREFIX}/${config.API_VERSION}/${config.API_DOWNLOAD}/${i.content}?token=${localStorage.getItem(config.LOCAL_STORAGE_TOKEN_NAME)}`);
         snackbar("File url has been copied, you can download it by yourself.")
     } else {
         copyToClipoard(i.content);
