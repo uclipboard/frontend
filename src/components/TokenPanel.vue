@@ -39,6 +39,7 @@ async function submit(event) {
     localStorage.setItem(config.LOCAL_STORAGE_TOKEN_NAME, md5_3)
     token.value = ""
   }
+  noticeRef.value.openSnackbar("update token completed.")
   loading.value = false
 
 }

@@ -2,17 +2,27 @@
 
     <v-textarea label="clipboard text" v-model="inputText" counter clearable></v-textarea>
     <v-row no-gutters>
-            <v-col class="mr-2">
-                <v-btn :loading="textActionLoading" text="push" @click="push" block></v-btn>
-            </v-col>
-            <v-col class="ml-2">
-                <v-btn :loading="textActionLoading" text="pull" @click="pull" block></v-btn>
-            </v-col>
+        <v-col class="mr-2">
+            <v-btn :loading="textActionLoading" text="push" @click="push" block></v-btn>
+        </v-col>
+        <v-col class="ml-2">
+            <v-btn :loading="textActionLoading" text="pull" @click="pull" block></v-btn>
+        </v-col>
     </v-row>
 
 
     <v-form validate-on="submit lazy" class="mt-4" @submit.prevent="upload">
         <v-file-input label="Select file" v-model="selectedFile" variant="underlined" show-size></v-file-input>
+        <v-row no-gutters>
+            <v-col class="mr-2" cols="1">
+                <v-checkbox true-icon="mdi-clock" v-model="uploadFileWithLifeTime">
+                </v-checkbox>
+            </v-col>
+            <v-col class="mr-2">
+                <v-text-field :disabled="!uploadFileWithLifeTime" label="file life time/secs" v-model="fileLifetime"
+                    hide-details></v-text-field>
+            </v-col>
+        </v-row>
         <v-btn :loading="uploadFileLoading" text="upload" type="upload" block></v-btn>
     </v-form>
 
@@ -47,8 +57,9 @@ const clipboardsHistory = ref([
         date: "now",
     }
 ])
-const noticeRef = ref(null);
-
+const uploadFileWithLifeTime = ref(false)
+const noticeRef = ref(null)
+const fileLifetime = ref(null)
 let pullTimerFd = null
 
 
@@ -88,13 +99,26 @@ function handleUnauthError(e) {
 }
 async function upload() {
 
+
+
     uploadFileLoading.value = true
     if (selectedFile.value === null) {
         dialog("file is empty!")
     } else {
         let uploadResponse
         try {
-            uploadResponse = await sendUploadRequest(selectedFile.value)
+            if (uploadFileWithLifeTime.value) {
+                if (! /^\d+$/.test(fileLifetime.value)) {
+                    dialog("the file lifetime should be number")
+                    uploadFileLoading.value = false
+                    return
+                }
+                console.log(`upload file with lifetime:${fileLifetime.value}`)
+                uploadResponse = await sendUploadRequest(selectedFile.value, fileLifetime.value * 1000)
+
+            } else {
+                uploadResponse = await sendUploadRequest(selectedFile.value)
+            }
         } catch (e) {
             handleUnauthError(e)
             return
@@ -104,6 +128,8 @@ async function upload() {
         selectedFile.value = null
     }
     uploadFileLoading.value = false
+    fileLifetime.value = null
+
 }
 async function push() {
     console.debug(inputText.value)

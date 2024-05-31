@@ -47,15 +47,19 @@ export async function sendPullRequest() {
 
 }
 
-export async function sendUploadRequest(file) {
+export async function sendUploadRequest(file,lifetime = null) {
     let token = localStorage.getItem(config.LOCAL_STORAGE_TOKEN_NAME)
 
     const formData = new FormData();
 
     formData.append('file', file);
-
+    let url = `${config.API_PREFIX}/${config.API_VERSION}/${config.API_UPLOAD}?token=${token}` 
+    if(lifetime !== null){
+        url+=`&lifetime=${lifetime}`
+    }
     try {
-        const response = await fetch(`${config.API_PREFIX}/${config.API_VERSION}/${config.API_UPLOAD}?token=${token}`, {
+
+        const response = await fetch(url, {
             method: 'POST',
             body: formData,
             headers: {
