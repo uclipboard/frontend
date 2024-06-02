@@ -7,10 +7,11 @@ export class ErrUnAuth extends Error {
     }
 }
 
-export async function sendHistoryRequest() {
+// page starts with 1
+export async function sendHistoryRequest(page) {
     let token = localStorage.getItem(config.LOCAL_STORAGE_TOKEN_NAME)
     try {
-        let response = await fetch(`${config.API_PREFIX}/${config.API_VERSION}/${config.API_HISTORY}?token=${token}`)
+        let response = await fetch(`${config.API_PREFIX}/${config.API_VERSION}/${config.API_HISTORY}?token=${token}&page=${page}`)
         if (response.status === 401) {
             throw new ErrUnAuth()
         } else if (!response.ok) {
@@ -22,7 +23,7 @@ export async function sendHistoryRequest() {
     } catch (error) {
         if (!error instanceof ErrUnAuth) console.error('There was a problem with the fetch operation:', error)
         else throw error
-        return []
+        return {page:1,history:[]}
     }
 
 }

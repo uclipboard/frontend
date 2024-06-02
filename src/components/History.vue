@@ -26,6 +26,7 @@
         <v-btn :loading="uploadFileLoading" text="upload" type="upload" block></v-btn>
     </v-form>
 
+    <v-pagination v-model="currentPage" :length="pageCount" rounded="circle"></v-pagination>
 
     <v-list lines="one" class="mt-4">
         <v-list-item v-for="i in clipboardsHistory" :prepend-icon="i.type == 'text' ? 'mdi-text-long' : 'mdi-file'"
@@ -37,7 +38,7 @@
 
 </template>
 <script setup>
-import { onMounted, onUnmounted, ref } from 'vue';
+import { onMounted, onUnmounted, ref, watch } from 'vue';
 import Notice from './Notice'
 
 import config from '@/assets/config';
@@ -59,7 +60,11 @@ const clipboardsHistory = ref([
 ])
 const uploadFileWithLifeTime = ref(false)
 const noticeRef = ref(null)
-const fileLifetime = ref(null)
+const fileLifetime = ref("")
+const currentPage = ref(1)
+const pageCount = ref(1)
+
+
 let pullTimerFd = null
 
 
@@ -97,6 +102,37 @@ function handleUnauthError(e) {
     }
 
 }
+
+function parseTimeStr(t) {
+    if (t == "") {
+        return 0
+    }
+    let unit = 0
+    let parseLen = t.length - 1
+    switch (t[t.length - 1]) {
+        case 's':
+            unit = 1
+            break
+        case 'm':
+            unit = 60
+            break
+        case 'h':
+            unit = 60 * 60
+            break
+        case 'd':
+            unit = 60 * 60 * 24
+            break
+        default:
+            unit = 1
+            parseLen += 1
+            break
+    }
+    console.debug(`${t.substring(0, parseLen)}`)
+    let numberNoUnit = parseInt(t.substring(0, parseLen), 10)
+    return numberNoUnit * unit
+
+}
+
 async function upload() {
 
 
@@ -108,13 +144,14 @@ async function upload() {
         let uploadResponse
         try {
             if (uploadFileWithLifeTime.value) {
-                if (! /^\d+$/.test(fileLifetime.value)) {
-                    dialog("the file lifetime should be number")
+                if (! /^\d+[smhd]$/.test(fileLifetime.value)) {
+                    dialog("the file lifetime has the incorrect format.")
                     uploadFileLoading.value = false
                     return
                 }
-                console.log(`upload file with lifetime:${fileLifetime.value}`)
-                uploadResponse = await sendUploadRequest(selectedFile.value, fileLifetime.value * 1000)
+                let lifeTimeNumber = parseTimeStr(fileLifetime.value)
+                console.log(`upload file with lifetime:${lifeTimeNumber}`)
+                uploadResponse = await sendUploadRequest(selectedFile.value, lifeTimeNumber)
 
             } else {
                 uploadResponse = await sendUploadRequest(selectedFile.value)
@@ -124,7 +161,7 @@ async function upload() {
             return
         }
         dialog(buildUploadResponseText(uploadResponse), "file infomation")
-
+            ``
         selectedFile.value = null
     }
     uploadFileLoading.value = false
@@ -132,7 +169,6 @@ async function upload() {
 
 }
 async function push() {
-    console.debug(inputText.value)
     if (inputText.value === "") {
         dialog("Input clipboard is empty!")
         return
@@ -154,7 +190,10 @@ async function push() {
     inputText.value = ""
     textActionLoading.value = false
     snackbar("Push clipboard success!")
-    pull()
+    if(pageCount.value === 1){
+        // pull data in the latest histroy page
+        pull()
+    }
 }
 async function pull() {
     console.debug("pull data")
@@ -190,16 +229,16 @@ async function getHistory() {
     clipboardsHistory.value = []
     let responesClipboardHostory;
     try {
-        responesClipboardHostory = await sendHistoryRequest()
+        responesClipboardHostory = await sendHistoryRequest(currentPage.value)
     } catch (e) {
         handleUnauthError(e)
         return
     }
     console.debug(responesClipboardHostory)
-    responesClipboardHostory.forEach(e => {
+    responesClipboardHostory.history.forEach(e => {
         clipboardsHistory.value.push(buildLocalClipboard(e))
     })
-
+    pageCount.value = responesClipboardHostory.pages
 }
 
 onMounted(_ => {
@@ -214,6 +253,20 @@ onUnmounted(_ => {
         pullTimerFd = null
     }
 })
+watch(currentPage, async (new_value, old_value) => {
+    console.debug(new_value)
+    if (new_value !== 1) {
+        if (pullTimerFd !== null) {
+            console.debug("pull timer added because of page changed to 1")
+            clearInterval(pullTimerFd)
+            pullTimerFd = null
+        }
+    } else {
+        console.debug("pull timer removed because of page changed")
+        pullTimerFd = setInterval(getLatestUpdate, config.PULL_INTERVAL_MS)
 
+    }
+    getHistory()
+})
 
 </script>
