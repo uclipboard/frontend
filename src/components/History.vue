@@ -19,7 +19,7 @@
                 </v-checkbox>
             </v-col>
             <v-col class="mr-2">
-                <v-text-field :disabled="!uploadFileWithLifeTime" label="file life time/secs" v-model="fileLifetime"
+                <v-text-field :disabled="!uploadFileWithLifeTime" label="file lifetime(unit:s/m/h/d default:s)" v-model="fileLifetime"
                     hide-details></v-text-field>
             </v-col>
         </v-row>
@@ -81,8 +81,14 @@ async function copy(i) {
         copyToClipoard(`${webSitePrefix}${config.API_PREFIX}/${config.API_VERSION}/${config.API_DOWNLOAD}/${i.content}?token=${localStorage.getItem(config.LOCAL_STORAGE_TOKEN_NAME)}`);
         snackbar("File url has been copied, you can download it by yourself.")
     } else {
+        let showText;
+        if(i.content.length > config.TEXT_SHOW_LIMIT){
+            showText = i.content.slice(0,config.TEXT_SHOW_LIMIT) + "..."
+        }else{
+            showText = i.content
+        }
         copyToClipoard(i.content);
-        snackbar(`'${i.content}' copied!`)
+        snackbar(`'${showText}' copied!`)
 
     }
 
