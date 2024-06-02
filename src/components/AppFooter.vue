@@ -12,7 +12,7 @@
     >
     <v-icon
         :icon="item.icon"
-        :size="item.icon === '$vuetify' ? 24 : 16"
+        :size="item.icon === 'mdi-github' ? 24 : 16"
       />
 
     </a>
@@ -21,20 +21,23 @@
       class="text-caption text-disabled"
       style="position: absolute; right: 16px;"
     >
-      &copy; 2024-{{ (new Date()).getFullYear() }} <span class="d-none d-sm-inline-block">dangjinghao and some infomation here</span>
+      &copy; 2024-{{ (new Date()).getFullYear() }} uclipboard. <span class="d-none d-sm-inline-block">All rights reserved.</span>
     </div>
   </v-footer>
 </template>
 
 <script setup>
   const items = [
-
     {
       title: 'uclipboard GitHub',
       icon: `mdi-github`,
-      href: 'https://github.com/dangjinghao/uclipboard',
+      href: 'https://github.com/uclipboard/uclipboard',
     },
-
+    {
+      title: 'uclipboard Document',
+      icon: `mdi-file-document-multiple`,
+      href: 'https://github.com/uclipboard/uclipboard/wiki',
+    },
   ]
 </script>
 

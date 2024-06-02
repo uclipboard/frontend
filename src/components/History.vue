@@ -30,7 +30,7 @@
 
     <v-list lines="one" class="mt-4">
         <v-list-item v-for="i in clipboardsHistory" :prepend-icon="i.type == 'text' ? 'mdi-text-long' : 'mdi-file'"
-            :key="i" :title="`${i.hostname} at ${i.date.toLocaleString()}`" :subtitle="i.content"
+            :key="i" :title="`${i.hostname} at ${i.date.toLocaleString()}`" :subtitle="isOnlyWhitespace(i.content)? '[invisible]' : i.content"
             @click="copy(i)"></v-list-item>
     </v-list>
     <Notice ref="noticeRef" />
@@ -67,6 +67,9 @@ const pageCount = ref(1)
 
 let pullTimerFd = null
 
+function isOnlyWhitespace(s){
+    return /^\s+$/.test(s)
+}
 
 async function snackbar(text) {
     noticeRef.value.openSnackbar(text)
