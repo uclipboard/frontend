@@ -143,9 +143,6 @@ function parseTimeStr(t) {
 }
 
 async function upload() {
-
-
-
     uploadFileLoading.value = true
     if (selectedFile.value === null) {
         dialog("file is empty!")
@@ -153,7 +150,12 @@ async function upload() {
         let uploadResponse
         try {
             if (uploadFileWithLifeTime.value) {
-                if (! /^\d+[smhd]$/.test(fileLifetime.value)) {
+                if(fileLifetime.value === ""){
+                    dialog("the file lifetime is empty.")
+                    uploadFileLoading.value = false
+                    return
+                }
+                if (! /^\d+[smhd]?$/.test(fileLifetime.value)) {
                     dialog("the file lifetime has the incorrect format.")
                     uploadFileLoading.value = false
                     return
@@ -170,7 +172,6 @@ async function upload() {
             return
         }
         dialog(buildUploadResponseText(uploadResponse), "file infomation")
-            ``
         selectedFile.value = null
     }
     uploadFileLoading.value = false
