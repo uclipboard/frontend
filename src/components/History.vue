@@ -97,7 +97,8 @@ async function copy(i) {
 
 }
 
-function handleUnauthError(e) {
+let errorCounter = 0;
+function handleNetworkError(e) {
     if (e instanceof ErrUnAuth) {
         dialog("Token is incorrect! After the correct token is entered, click 'pull' to reload data.")
         if (pullTimerFd !== null) {
@@ -107,7 +108,16 @@ function handleUnauthError(e) {
         }
         return
     } else {
-        throw e
+        dialog(e.message)
+        errorCounter += 1;
+        if (errorCounter > 5) {
+            dialog("The network is unstable, please check the network connection.")
+            errorCounter = 0
+            if(pullTimerFd !== null){
+                clearInterval(pullTimerFd)
+                pullTimerFd = null
+            }
+        }
     }
 
 }
@@ -168,7 +178,9 @@ async function upload() {
                 uploadResponse = await sendUploadRequest(selectedFile.value)
             }
         } catch (e) {
-            handleUnauthError(e)
+            handleNetworkError(e)
+            uploadFileLoading.value = false
+
             return
         }
         dialog(buildUploadResponseText(uploadResponse), "file infomation")
@@ -191,7 +203,9 @@ async function push() {
     try {
         responseClipboardPushRequest = await sendPushRequest(requestClipboardData)
     } catch (e) {
-        handleUnauthError(e)
+        handleNetworkError(e)
+        textActionLoading.value = false
+
         return
     }
 
@@ -210,6 +224,7 @@ async function pull() {
     textActionLoading.value = true
     if (pullTimerFd === null) {
         console.debug("reopen pull timer")
+        snackbar("Pull timer has been reopened.")
         getHistory()
         pullTimerFd = setInterval(getLatestUpdate, config.PULL_INTERVAL_MS)
     }
@@ -222,7 +237,8 @@ async function getLatestUpdate() {
     try {
         responesClipboardLatest = await sendPullRequest()
     } catch (e) {
-        handleUnauthError(e)
+        handleNetworkError(e)
+
         return
     }
     console.debug(responesClipboardLatest)
@@ -241,7 +257,7 @@ async function getHistory() {
     try {
         responesClipboardHostory = await sendHistoryRequest(currentPage.value)
     } catch (e) {
-        handleUnauthError(e)
+        handleNetworkError(e)
         return
     }
     console.debug(responesClipboardHostory)

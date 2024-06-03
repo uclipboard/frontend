@@ -7,107 +7,75 @@ export class ErrUnAuth extends Error {
     }
 }
 
-// page starts with 1
-export async function sendHistoryRequest(page) {
-    let token = localStorage.getItem(config.LOCAL_STORAGE_TOKEN_NAME)
+let fetchWrapper = async (url, options) => {
     try {
-        let response = await fetch(`${config.API_PREFIX}/${config.API_VERSION}/${config.API_HISTORY}?token=${token}&page=${page}`)
+        let response = await fetch(url, options)
         if (response.status === 401) {
             throw new ErrUnAuth()
         } else if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}\tmsg: ${response.statusText}`)
+            let errorResponse = await response.json()
+            
+            throw new Error(`HTTP ERROR[${response.status}]: ${errorResponse.msg}`)
         }
-        let responesClipboardHostory = await response.json()
-        return responesClipboardHostory.data
-
-    } catch (error) {
+        return response
+    }
+    catch (error) {
         if (!error instanceof ErrUnAuth) console.error('There was a problem with the fetch operation:', error)
         else throw error
-        return {page:1,history:[]}
     }
+}
 
+// page starts with 1
+export async function sendHistoryRequest(page) {
+    let token = localStorage.getItem(config.LOCAL_STORAGE_TOKEN_NAME)
+    let response = await fetchWrapper(`${config.API_PREFIX}/${config.API_VERSION}/${config.API_HISTORY}?token=${token}&page=${page}`)
+
+    let responesClipboardHostory = await response.json()
+    return responesClipboardHostory.data
 }
 
 export async function sendPullRequest() {
     let token = localStorage.getItem(config.LOCAL_STORAGE_TOKEN_NAME)
 
-    try {
-        let response = await fetch(`${config.API_PREFIX}/${config.API_VERSION}/${config.API_PULL}?token=${token}`)
-        if (response.status === 401) {
-            throw new ErrUnAuth()
-        } else if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}\tmsg: ${(await response.json()).msg}`)
-        }
-        let responesClipboardLatest = await response.json()
-        return responesClipboardLatest.data
-    } catch (error) {
-        if (!error instanceof ErrUnAuth) console.error('There was a problem with the fetch operation:', error)
-        else throw error
-        return []
-    }
-
+    let response = await fetchWrapper(`${config.API_PREFIX}/${config.API_VERSION}/${config.API_PULL}?token=${token}`)
+    let responseJson = await response.json()
+    return responseJson.data
 }
 
-export async function sendUploadRequest(file,lifetime = null) {
+export async function sendUploadRequest(file, lifetime = null) {
     let token = localStorage.getItem(config.LOCAL_STORAGE_TOKEN_NAME)
 
     const formData = new FormData();
 
     formData.append('file', file);
-    let url = `${config.API_PREFIX}/${config.API_VERSION}/${config.API_UPLOAD}?token=${token}` 
-    if(lifetime !== null){
-        url+=`&lifetime=${lifetime}`
+    let url = `${config.API_PREFIX}/${config.API_VERSION}/${config.API_UPLOAD}?token=${token}`
+    if (lifetime !== null) {
+        url += `&lifetime=${lifetime}`
     }
-    try {
-
-        const response = await fetch(url, {
-            method: 'POST',
-            body: formData,
-            headers: {
-                "hostname": "browser"
-            }
-        });
-
-        if (response.status === 401) {
-            throw new ErrUnAuth()
-        } else if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+    const response = await fetchWrapper(url, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            "hostname": "browser"
         }
+    });
 
-        const uploadResponse = await response.json();
-        return uploadResponse.data; // You can return the response if needed
-
-    } catch (error) {
-        if (!error instanceof ErrUnAuth) console.error('There was a problem with the fetch operation:', error)
-        else throw error
-        return {}
-    }
+    const uploadResponse = await response.json();
+    return uploadResponse.data; // You can return the response if needed
 }
 
 export async function sendPushRequest(requestClipboardData) {
     let token = localStorage.getItem(config.LOCAL_STORAGE_TOKEN_NAME)
 
-    try {
-        let response = await fetch(`${config.API_PREFIX}/${config.API_VERSION}/${config.API_PUSH}?token=${token}`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(requestClipboardData)
-        })
+    let response = await fetchWrapper(`${config.API_PREFIX}/${config.API_VERSION}/${config.API_PUSH}?token=${token}`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(requestClipboardData)
+    })
 
-        if (response.status === 401) {
-            throw new ErrUnAuth()
-        } else if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}\tmsg: ${(await response.json()).msg}`)
-        }
-        let respones = await response.json()
-        return respones.data
-    } catch (error) {
-        if (!error instanceof ErrUnAuth) console.error('There was a problem with the fetch operation:', error)
-        else throw error
-
-        return {}
-    }
+    let respones = await response.json()
+    return respones.data
 
 }
