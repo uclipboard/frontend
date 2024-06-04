@@ -1,6 +1,10 @@
 <template>
   <v-form validate-on="submit lazy" @submit.prevent="submit">
-    <v-text-field v-model="token" :rules="rules" label="token"></v-text-field>
+    <v-text-field v-model="token" :rules="rules" 
+    :append-inner-icon="visible ? 'mdi-eye':'mdi-eye-off'"
+    :type="visible ? 'text' : 'password'"q
+    @click:append-inner="visible = !visible"
+    label="token"></v-text-field>
     <v-row no-gutters>
       <v-col class="mr-2">
         <v-btn :loading="loading" text="update" type="submit" block></v-btn>
@@ -25,6 +29,7 @@ const rules = [value => checkApi(value)]
 const timeout = ref(null)
 const token = ref("")
 const noticeRef = ref(null);
+const visible = ref(false)
 
 async function submit(event) {
   loading.value = true
