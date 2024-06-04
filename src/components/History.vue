@@ -25,9 +25,9 @@
         </v-row>
         <v-btn :loading="uploadFileLoading" text="upload" type="upload" block></v-btn>
     </v-form>
+    <v-checkbox  class="d-sm-inline-block" label="copy text to the textfield above" v-model="copyToTextfield" ></v-checkbox> 
 
     <v-pagination v-model="currentPage" :length="pageCount" rounded="circle"></v-pagination>
-
     <v-list lines="one" class="mt-4">
     
       <div class="text-center"
@@ -40,7 +40,7 @@
       </div>
 
       <v-list-item v-for="i in clipboardsHistory" :prepend-icon="i.type == 'text' ? 'mdi-text-long' : 'mdi-file'"
-          :key="i" :title="`${i.hostname} at ${i.date.toLocaleString()}`" :subtitle="isOnlyWhitespace(i.content)? '[invisible]' : i.content"
+          :key="i" :title="`${i.hostname} at ${clipboardDateFormat(i.date)}`" :subtitle="isOnlyWhitespace(i.content)? '[invisible]' : i.content"
           @click="copy(i)" />
     </v-list>
     <Notice ref="noticeRef" />
@@ -70,6 +70,9 @@ const listLoading = ref(true)
 const copyToTextfield = ref(false)
 let pullTimerFd = null
 
+function clipboardDateFormat(date) {
+    return date.toLocaleString()
+}
 function isOnlyWhitespace(s){
     return /^\s+$/.test(s)
 }
@@ -84,8 +87,13 @@ async function dialog(text, title = "warning") {
 async function copy(i) {
     if (i.type != "text") {
         let webSitePrefix = window.location.origin
-        copyToClipoard(`${webSitePrefix}${config.API_PREFIX}/${config.API_VERSION}/${config.API_DOWNLOAD}/${i.content}?token=${localStorage.getItem(config.LOCAL_STORAGE_TOKEN_NAME)}`);
-        snackbar("File url has been copied, you can download it by yourself.")
+        let text = `${webSitePrefix}${config.API_PREFIX}/${config.API_VERSION}/${config.API_DOWNLOAD}/${i.content}?token=${localStorage.getItem(config.LOCAL_STORAGE_TOKEN_NAME)}`
+        if(copyToTextfield.value){
+            inputText.value = text
+        }else{
+            copyToClipoard(text);
+            snackbar("File url has been copied, you can download it by yourself.")
+        }
     } else {
         let showText;
         if(i.content.length > config.TEXT_SHOW_LIMIT){
@@ -93,9 +101,13 @@ async function copy(i) {
         }else{
             showText = i.content
         }
-        copyToClipoard(i.content);
-        snackbar(`'${showText}' copied!`)
-
+        
+        if(copyToTextfield.value){
+            inputText.value = i.content
+        }else{
+            copyToClipoard(i.content);
+            snackbar(`'${showText}' copied!`)
+        }
     }
 
 }
@@ -244,7 +256,7 @@ async function getLatestUpdate() {
 
         return
     }
-    console.debug(responesClipboardLatest)
+    // console.debug(responesClipboardLatest)
     responesClipboardLatest.forEach(e => {
         let clipboard = buildLocalClipboard(e)
         if (!arrayIncludeAClipboard(clipboardsHistory.value, clipboard)) {
