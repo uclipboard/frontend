@@ -57,3 +57,43 @@ export function buildUploadResponseText(uploadResponse) {
 
     return `${metadata.file_name}@${metadata.file_id} expires ${metadata.life_time}s` 
 }
+
+export function clipboardDateFormat(date) {
+    // 30s ago :now
+    // 1m - 10m ago : show Xm Xs ago
+    // 10m - 1h ago : show Xm ago
+    // 1h - 24h : show Xh ago
+    // 1d - 3d : show Xd ago
+    // else : show date.toLocaleString()
+
+    const now = new Date()
+    const diff = now - date
+    const diffSeconds = Math.floor(diff / 1000)
+    const diffMinutes = Math.floor(diffSeconds / 60)
+    const diffHours = Math.floor(diffMinutes / 60)
+    const diffDays = Math.floor(diffHours / 24)
+    if (diffSeconds < 30) {
+        return "now"
+    }
+    else if (diffMinutes < 1) {
+        return `${diffSeconds}s ago`
+    }
+    else if (diffMinutes < 10) {
+        return `${diffMinutes}m ${diffSeconds % 60}s ago`
+    }
+    else if (diffHours < 1) {
+        return `${diffMinutes}m ago`
+    }
+    else if (diffHours < 24) {
+        return `${diffHours}h ago`
+    }
+    else if (diffDays < 3) {
+        return `${diffDays}d ago`
+    }
+    else {
+        return date.toLocaleString()
+    }
+}
+export function isOnlyWhitespace(s){
+    return /^\s+$/.test(s)
+}

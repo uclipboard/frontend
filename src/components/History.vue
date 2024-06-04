@@ -40,7 +40,7 @@
       </div>
 
       <v-list-item v-for="i in clipboardsHistory" :prepend-icon="i.type == 'text' ? 'mdi-text-long' : 'mdi-file'"
-          :key="i" :title="`${i.hostname} at ${clipboardDateFormat(i.date)}`" :subtitle="isOnlyWhitespace(i.content)? '[invisible]' : i.content"
+          :key="i" :title="`${i.hostname} | ${clipboardDateFormat(i.date)}`" :subtitle="isOnlyWhitespace(i.content)? '[invisible]' : i.content"
           @click="copy(i)" />
     </v-list>
     <Notice ref="noticeRef" />
@@ -52,7 +52,7 @@ import { onMounted, onUnmounted, ref, watch } from 'vue';
 import Notice from './Notice'
 
 import config from '@/assets/config';
-import { buildUploadResponseText, buildLocalClipboard, copyToClipoard, arrayIncludeAClipboard, buildRemoteClipboard } from '@/assets/utils'
+import { buildUploadResponseText, buildLocalClipboard, copyToClipoard, arrayIncludeAClipboard, buildRemoteClipboard ,isOnlyWhitespace,clipboardDateFormat} from '@/assets/utils'
 import { ErrUnAuth, sendHistoryRequest, sendPullRequest, sendPushRequest, sendUploadRequest } from '@/assets/request';
 
 
@@ -69,13 +69,6 @@ const pageCount = ref(1)
 const listLoading = ref(true)
 const copyToTextfield = ref(false)
 let pullTimerFd = null
-
-function clipboardDateFormat(date) {
-    return date.toLocaleString()
-}
-function isOnlyWhitespace(s){
-    return /^\s+$/.test(s)
-}
 
 async function snackbar(text) {
     noticeRef.value.openSnackbar(text)
@@ -242,12 +235,13 @@ async function pull() {
         console.debug("reopen pull timer")
         snackbar("Pull timer has been reopened.")
         getHistory()
+    }else{
+        await getLatestUpdate()
     }
-    await getLatestUpdate()
     textActionLoading.value = false
 }
 async function getLatestUpdate() {
-    console.debug("update clipboard history")
+    // console.debug("update clipboard history")
     let responesClipboardLatest
     try {
         responesClipboardLatest = await sendPullRequest()
@@ -268,7 +262,6 @@ async function getLatestUpdate() {
 }
 async function getHistory() {
     listLoading.value = true
-    clipboardsHistory.value = []
     let responesClipboardHostory;
     try {
         responesClipboardHostory = await sendHistoryRequest(currentPage.value)
@@ -277,21 +270,21 @@ async function getHistory() {
         return
     }
     console.debug(responesClipboardHostory)
+    clipboardsHistory.value = []
+
     responesClipboardHostory.history.forEach(e => {
         clipboardsHistory.value.push(buildLocalClipboard(e))
     })
     pageCount.value = responesClipboardHostory.pages
     listLoading.value = false
-    // set pull timer after getting history success
-    addPullTimer()
-
+    
 }
 function removePullTimer(){
     if (pullTimerFd !== null) {
         clearInterval(pullTimerFd)
         pullTimerFd = null
     }else{
-        console.debug("removed pull timer is null")
+        console.debug("the pull timer that required to remove is null")
     
     }
 }
@@ -299,8 +292,10 @@ function addPullTimer(){
     removePullTimer()
     pullTimerFd = setInterval(getLatestUpdate, config.PULL_INTERVAL_MS)
 }
-onMounted(_ => {
-    getHistory()
+onMounted(async _ => {
+    await getHistory()
+    // set pull timer after getting history success
+    addPullTimer()
 
 })
 
