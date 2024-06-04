@@ -29,9 +29,19 @@
     <v-pagination v-model="currentPage" :length="pageCount" rounded="circle"></v-pagination>
 
     <v-list lines="one" class="mt-4">
-        <v-list-item v-for="i in clipboardsHistory" :prepend-icon="i.type == 'text' ? 'mdi-text-long' : 'mdi-file'"
-            :key="i" :title="`${i.hostname} at ${i.date.toLocaleString()}`" :subtitle="isOnlyWhitespace(i.content)? '[invisible]' : i.content"
-            @click="copy(i)"></v-list-item>
+    
+      <div class="text-center"
+      v-if="listLoading"
+      >
+        <v-progress-circular
+          color="primary"
+          indeterminate
+        ></v-progress-circular>
+      </div>
+
+      <v-list-item v-for="i in clipboardsHistory" :prepend-icon="i.type == 'text' ? 'mdi-text-long' : 'mdi-file'"
+          :key="i" :title="`${i.hostname} at ${i.date.toLocaleString()}`" :subtitle="isOnlyWhitespace(i.content)? '[invisible]' : i.content"
+          @click="copy(i)" />
     </v-list>
     <Notice ref="noticeRef" />
 
@@ -50,21 +60,14 @@ const textActionLoading = ref(false)
 const inputText = ref("")
 const selectedFile = ref(null)
 const uploadFileLoading = ref(false)
-const clipboardsHistory = ref([
-    {
-        content: "hello world!",
-        type: "text",
-        hostname: "uclipboard",
-        date: "now",
-    }
-])
+const clipboardsHistory = ref([])  
 const uploadFileWithLifeTime = ref(false)
 const noticeRef = ref(null)
 const fileLifetime = ref("")
 const currentPage = ref(1)
 const pageCount = ref(1)
-
-
+const listLoading = ref(true)
+const copyToTextfield = ref(false)
 let pullTimerFd = null
 
 function isOnlyWhitespace(s){
@@ -111,7 +114,7 @@ function handleNetworkError(e) {
         dialog(e.message)
         errorCounter += 1;
         if (errorCounter > 5) {
-            dialog("The network is unstable, please check the network connection.")
+            dialog("The network is unstable, please check the network connection. Then click 'pull' to enable dynmaic data pulling.")
             errorCounter = 0
             if(pullTimerFd !== null){
                 clearInterval(pullTimerFd)
@@ -223,10 +226,10 @@ async function pull() {
     console.debug("pull data")
     textActionLoading.value = true
     if (pullTimerFd === null) {
+        // for some reason, the pull timer is removed, so we need to reopen it
         console.debug("reopen pull timer")
         snackbar("Pull timer has been reopened.")
         getHistory()
-        pullTimerFd = setInterval(getLatestUpdate, config.PULL_INTERVAL_MS)
     }
     await getLatestUpdate()
     textActionLoading.value = false
@@ -252,6 +255,7 @@ async function getLatestUpdate() {
     });
 }
 async function getHistory() {
+    listLoading.value = true
     clipboardsHistory.value = []
     let responesClipboardHostory;
     try {
@@ -265,32 +269,40 @@ async function getHistory() {
         clipboardsHistory.value.push(buildLocalClipboard(e))
     })
     pageCount.value = responesClipboardHostory.pages
-}
+    listLoading.value = false
+    // set pull timer after getting history success
+    addPullTimer()
 
+}
+function removePullTimer(){
+    if (pullTimerFd !== null) {
+        clearInterval(pullTimerFd)
+        pullTimerFd = null
+    }else{
+        console.debug("removed pull timer is null")
+    
+    }
+}
+function addPullTimer(){
+    removePullTimer()
+    pullTimerFd = setInterval(getLatestUpdate, config.PULL_INTERVAL_MS)
+}
 onMounted(_ => {
     getHistory()
-    pullTimerFd = setInterval(getLatestUpdate, config.PULL_INTERVAL_MS)
 
 })
 
 onUnmounted(_ => {
-    if (pullTimerFd !== null) {
-        clearInterval(pullTimerFd)
-        pullTimerFd = null
-    }
+    removePullTimer()
 })
 watch(currentPage, async (new_value, old_value) => {
     console.debug(new_value)
     if (new_value !== 1) {
-        if (pullTimerFd !== null) {
             console.debug("pull timer added because of page changed to 1")
-            clearInterval(pullTimerFd)
-            pullTimerFd = null
-        }
+            removePullTimer()
     } else {
         console.debug("pull timer removed because of page changed")
-        pullTimerFd = setInterval(getLatestUpdate, config.PULL_INTERVAL_MS)
-
+        addPullTimer()
     }
     getHistory()
 })
