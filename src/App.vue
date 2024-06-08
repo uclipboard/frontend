@@ -19,19 +19,17 @@
         </v-list>
       </v-navigation-drawer>
 
+      <v-container fill-height>
+        <v-tabs-window class="pa-4 mx-auto" v-model="tab">
+          <v-tabs-window-item value="history">
+            <History />
+          </v-tabs-window-item>
 
-      <v-tabs-window class="pa-4 mx-auto" v-model="tab">
-        <v-tabs-window-item value="history">
-          <History />
-        </v-tabs-window-item>
-
-        <v-tabs-window-item value="token">
-          <TokenPanel />
-        </v-tabs-window-item>
-
-      </v-tabs-window>
-
-
+          <v-tabs-window-item value="token">
+            <TokenPanel />
+          </v-tabs-window-item>
+        </v-tabs-window>
+      </v-container>
     </v-main>
 
     <AppFooter />

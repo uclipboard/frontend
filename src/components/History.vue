@@ -12,36 +12,36 @@
 
 
     <v-form validate-on="submit lazy" class="mt-4" @submit.prevent="upload">
-        <v-file-input label="Select file" v-model="selectedFile" variant="underlined" show-size></v-file-input>
-        <v-row no-gutters>
-            <v-col class="mr-2" cols="1">
-                <v-checkbox true-icon="mdi-clock" v-model="uploadFileWithLifeTime">
-                </v-checkbox>
-            </v-col>
-            <v-col class="mr-2">
-                <v-text-field :disabled="!uploadFileWithLifeTime" label="file lifetime(unit:s/m/h/d default:s)" v-model="fileLifetime"
-                    hide-details></v-text-field>
-            </v-col>
-        </v-row>
-        <v-btn :loading="uploadFileLoading" text="upload" type="upload" block></v-btn>
+        <v-file-input label="Select file" v-model="selectedFile" variant="solo" show-size></v-file-input>
+        <div class="d-flex pt-4">
+            <v-checkbox-btn v-model="uploadFileWithLifeTime"></v-checkbox-btn>
+            <v-text-field :disabled="!uploadFileWithLifeTime" label="file lifetime" v-model="fileLifetime"
+                variant="outlined" hide-details>
+                <template v-slot:append>
+                    <v-tooltip location="bottom" open-on-click>
+                        <template v-slot:activator="{ props }">
+                            <v-icon v-bind="props" icon="mdi-help-circle-outline"></v-icon>
+                        </template>
+                        supported suffix: s,m,h,d default:s
+                    </v-tooltip>
+                </template>
+            </v-text-field>
+        </div>
+        <v-btn class="mt-2" :loading="uploadFileLoading" text="upload" type="upload" block></v-btn>
     </v-form>
-    <v-checkbox  class="d-sm-inline-block" label="copy text to the textfield above" v-model="copyToTextfield" ></v-checkbox> 
+    <v-checkbox class="d-sm-inline-block" label="copy text to the textfield above"
+        v-model="copyToTextfield"></v-checkbox>
 
     <v-pagination v-model="currentPage" :length="pageCount" rounded="circle"></v-pagination>
     <v-list lines="one" class="mt-4">
-    
-      <div class="text-center"
-      v-if="listLoading"
-      >
-        <v-progress-circular
-          color="primary"
-          indeterminate
-        ></v-progress-circular>
-      </div>
 
-      <v-list-item v-for="i in clipboardsHistory" :prepend-icon="i.type == 'text' ? 'mdi-text-long' : 'mdi-file'"
-          :key="i" :title="`${i.hostname} | ${clipboardDateFormat(i.date)}`" :subtitle="isOnlyWhitespace(i.content)? '[invisible]' : i.content"
-          @click="copy(i)" />
+        <div class="text-center" v-if="listLoading">
+            <v-progress-circular color="primary" indeterminate></v-progress-circular>
+        </div>
+
+        <v-list-item v-for="i in clipboardsHistory" :prepend-icon="i.type == 'text' ? 'mdi-text-long' : 'mdi-file'"
+            :key="i" :title="`${i.hostname} | ${clipboardDateFormat(i.date)}`"
+            :subtitle="isOnlyWhitespace(i.content) ? '[invisible]' : i.content" @click="copy(i)" />
     </v-list>
     <Notice ref="noticeRef" />
 
@@ -52,7 +52,7 @@ import { onMounted, onUnmounted, ref, watch } from 'vue';
 import Notice from './Notice'
 
 import config from '@/assets/config';
-import { buildUploadResponseText, buildLocalClipboard, copyToClipoard, arrayIncludeAClipboard, buildRemoteClipboard ,isOnlyWhitespace,clipboardDateFormat} from '@/assets/utils'
+import { buildUploadResponseText, buildLocalClipboard, copyToClipoard, arrayIncludeAClipboard, buildRemoteClipboard, isOnlyWhitespace, clipboardDateFormat } from '@/assets/utils'
 import { ErrUnAuth, sendHistoryRequest, sendPullRequest, sendPushRequest, sendUploadRequest } from '@/assets/request';
 
 
@@ -60,10 +60,10 @@ const textActionLoading = ref(false)
 const inputText = ref("")
 const selectedFile = ref(null)
 const uploadFileLoading = ref(false)
-const clipboardsHistory = ref([])  
+const clipboardsHistory = ref([])
 const uploadFileWithLifeTime = ref(false)
 const noticeRef = ref(null)
-const fileLifetime = ref("")
+const fileLifetime = ref("300s")
 const currentPage = ref(1)
 const pageCount = ref(1)
 const listLoading = ref(true)
@@ -81,23 +81,23 @@ async function copy(i) {
     if (i.type != "text") {
         let webSitePrefix = window.location.origin
         let text = `${webSitePrefix}${config.API_PREFIX}/${config.API_VERSION}/${config.API_DOWNLOAD}/${i.content}?token=${localStorage.getItem(config.LOCAL_STORAGE_TOKEN_NAME)}`
-        if(copyToTextfield.value){
+        if (copyToTextfield.value) {
             inputText.value = text
-        }else{
+        } else {
             copyToClipoard(text);
             snackbar("File url has been copied, you can download it by yourself.")
         }
     } else {
         let showText;
-        if(i.content.length > config.TEXT_SHOW_LIMIT){
-            showText = i.content.slice(0,config.TEXT_SHOW_LIMIT) + "..."
-        }else{
+        if (i.content.length > config.TEXT_SHOW_LIMIT) {
+            showText = i.content.slice(0, config.TEXT_SHOW_LIMIT) + "..."
+        } else {
             showText = i.content
         }
-        
-        if(copyToTextfield.value){
+
+        if (copyToTextfield.value) {
             inputText.value = i.content
-        }else{
+        } else {
             copyToClipoard(i.content);
             snackbar(`'${showText}' copied!`)
         }
@@ -121,10 +121,7 @@ function handleNetworkError(e) {
         if (errorCounter > 5) {
             dialog("The network is unstable, please check the network connection. Then click 'pull' to enable dynmaic data pulling.")
             errorCounter = 0
-            if(pullTimerFd !== null){
-                clearInterval(pullTimerFd)
-                pullTimerFd = null
-            }
+            removePullTimer()
         }
     }
 
@@ -168,7 +165,7 @@ async function upload() {
         let uploadResponse
         try {
             if (uploadFileWithLifeTime.value) {
-                if(fileLifetime.value === ""){
+                if (fileLifetime.value === "") {
                     dialog("the file lifetime is empty.")
                     uploadFileLoading.value = false
                     return
@@ -195,7 +192,6 @@ async function upload() {
         selectedFile.value = null
     }
     uploadFileLoading.value = false
-    fileLifetime.value = null
 
 }
 async function push() {
@@ -222,7 +218,7 @@ async function push() {
     inputText.value = ""
     textActionLoading.value = false
     snackbar("Push clipboard success!")
-    if(pageCount.value === 1){
+    if (pageCount.value === 1) {
         // pull data in the latest histroy page
         pull()
     }
@@ -235,7 +231,7 @@ async function pull() {
         console.debug("reopen pull timer")
         snackbar("Pull timer has been reopened.")
         getHistory()
-    }else{
+    } else {
         await getLatestUpdate()
     }
     textActionLoading.value = false
@@ -277,18 +273,18 @@ async function getHistory() {
     })
     pageCount.value = responesClipboardHostory.pages
     listLoading.value = false
-    
+
 }
-function removePullTimer(){
+function removePullTimer() {
     if (pullTimerFd !== null) {
         clearInterval(pullTimerFd)
         pullTimerFd = null
-    }else{
+    } else {
         console.debug("the pull timer that required to remove is null")
-    
+
     }
 }
-function addPullTimer(){
+function addPullTimer() {
     removePullTimer()
     pullTimerFd = setInterval(getLatestUpdate, config.PULL_INTERVAL_MS)
 }
@@ -305,8 +301,8 @@ onUnmounted(_ => {
 watch(currentPage, async (new_value, old_value) => {
     console.debug(new_value)
     if (new_value !== 1) {
-            console.debug("pull timer added because of page changed to 1")
-            removePullTimer()
+        console.debug("pull timer added because of page changed to 1")
+        removePullTimer()
     } else {
         console.debug("pull timer removed because of page changed")
         addPullTimer()
