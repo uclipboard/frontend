@@ -1,11 +1,11 @@
 <template>
 
     <v-textarea label="clipboard text" v-model="inputText" counter clearable></v-textarea>
-    <div class="d-flex">
-        <div class="flex-1-0 mr-2">
+    <div class="d-flex ga-4">
+        <div class="flex-1-0">
             <v-btn :loading="textActionLoading" text="push" @click="push" block></v-btn>
         </div>
-        <div class="flex-1-0 ml-2">
+        <div class="flex-1-0">
             <v-btn :loading="textActionLoading" text="pull" @click="pull" block></v-btn>
         </div>
     </div>

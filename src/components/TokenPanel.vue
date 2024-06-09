@@ -2,11 +2,11 @@
   <v-form validate-on="submit lazy" @submit.prevent="submit">
     <v-text-field v-model="token" :rules="rules" :append-inner-icon="visible ? 'mdi-eye' : 'mdi-eye-off'"
       :type="visible ? 'text' : 'password'" q @click:append-inner="visible = !visible" label="token"></v-text-field>
-    <div class="d-flex">
-      <div class="mr-2 flex-1-0">
+    <div class="d-flex ga-4">
+      <div class="flex-1-0">
         <v-btn :loading="loading" text="update" type="submit" block></v-btn>
       </div>
-      <div class="ml-2 flex-1-0">
+      <div class="flex-1-0">
         <v-btn :loading="loading" text="clear" @click="clear" block></v-btn>
       </div>
     </div>
