@@ -1,19 +1,15 @@
 <template>
   <v-form validate-on="submit lazy" @submit.prevent="submit">
-    <v-text-field v-model="token" :rules="rules" 
-    :append-inner-icon="visible ? 'mdi-eye':'mdi-eye-off'"
-    :type="visible ? 'text' : 'password'"q
-    @click:append-inner="visible = !visible"
-    label="token"></v-text-field>
-    <v-row no-gutters>
-      <v-col class="mr-2">
+    <v-text-field v-model="token" :rules="rules" :append-inner-icon="visible ? 'mdi-eye' : 'mdi-eye-off'"
+      :type="visible ? 'text' : 'password'" q @click:append-inner="visible = !visible" label="token"></v-text-field>
+    <div class="d-flex">
+      <div class="mr-2 flex-1-0">
         <v-btn :loading="loading" text="update" type="submit" block></v-btn>
-      </v-col>
-      <v-col class="ml-2">
+      </div>
+      <div class="ml-2 flex-1-0">
         <v-btn :loading="loading" text="clear" @click="clear" block></v-btn>
-      </v-col>
-    </v-row>
-
+      </div>
+    </div>
   </v-form>
   <Notice ref="noticeRef" />
 </template>

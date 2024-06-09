@@ -4,7 +4,7 @@
         {{ snackbarText }}
 
         <template v-slot:actions>
-            <v-btn color="blue" variant="text" @click="snackbar = false">
+            <v-btn color="secondary" variant="text" @click="snackbar = false">
                 Close
             </v-btn>
         </template>
@@ -13,9 +13,10 @@
     <v-dialog
       v-model="dialog"
       width="auto"
-    >
+      min-width="20%"
+      max-width="60%"
+      >
       <v-card
-        max-width="500"
         prepend-icon="mdi-alert"
         :text="dialogText"
         :title="dialogTitle"

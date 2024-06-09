@@ -1,36 +1,38 @@
 <template>
 
     <v-textarea label="clipboard text" v-model="inputText" counter clearable></v-textarea>
-    <v-row no-gutters>
-        <v-col class="mr-2">
+    <div class="d-flex">
+        <div class="flex-1-0 mr-2">
             <v-btn :loading="textActionLoading" text="push" @click="push" block></v-btn>
-        </v-col>
-        <v-col class="ml-2">
+        </div>
+        <div class="flex-1-0 ml-2">
             <v-btn :loading="textActionLoading" text="pull" @click="pull" block></v-btn>
-        </v-col>
-    </v-row>
-
+        </div>
+    </div>
 
     <v-form validate-on="submit lazy" class="mt-4" @submit.prevent="upload">
         <v-file-input label="Select file" v-model="selectedFile" variant="solo" show-size></v-file-input>
         <div class="d-flex pt-4">
-            <v-checkbox-btn v-model="uploadFileWithLifeTime"></v-checkbox-btn>
-            <v-text-field :disabled="!uploadFileWithLifeTime" label="file lifetime" v-model="fileLifetime"
-                variant="outlined" hide-details>
-                <template v-slot:append>
-                    <v-tooltip location="bottom" open-on-click>
-                        <template v-slot:activator="{ props }">
-                            <v-icon v-bind="props" icon="mdi-help-circle-outline"></v-icon>
-                        </template>
-                        supported suffix: s,m,h,d default:s
-                    </v-tooltip>
-                </template>
-            </v-text-field>
+            <div class="align-self-center">
+                <v-checkbox-btn v-model="uploadFileWithLifeTime"></v-checkbox-btn>
+            </div>
+            <div class="flex-1-0">
+                <v-text-field :disabled="!uploadFileWithLifeTime" label="file lifetime" v-model="fileLifetime"
+                    variant="outlined" hide-details>
+                    <template v-slot:prepend>
+                        <v-tooltip location="bottom" open-on-click>
+                            <template v-slot:activator="{ props }">
+                                <v-icon v-bind="props" icon="mdi-help-circle-outline"></v-icon>
+                            </template>
+                            supported suffix: s,m,h,d default:s
+                        </v-tooltip>
+                    </template>
+                </v-text-field>
+            </div>
         </div>
         <v-btn class="mt-2" :loading="uploadFileLoading" text="upload" type="upload" block></v-btn>
     </v-form>
-    <v-checkbox class="d-sm-inline-block" label="copy text to the textfield above"
-        v-model="copyToTextfield"></v-checkbox>
+    <v-checkbox label="copy text to the textfield above" v-model="copyToTextfield" hide-details></v-checkbox>
 
     <v-pagination v-model="currentPage" :length="pageCount" rounded="circle"></v-pagination>
     <v-list lines="one" class="mt-4">
