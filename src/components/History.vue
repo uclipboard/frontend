@@ -12,7 +12,7 @@
 
     <v-form validate-on="submit lazy" class="mt-4" @submit.prevent="upload">
         <v-file-input label="Select file" v-model="selectedFile" variant="solo" show-size></v-file-input>
-        <div class="d-flex pt-4">
+        <div class="d-flex ">
             <div class="align-self-center">
                 <v-checkbox-btn v-model="uploadFileWithLifeTime"></v-checkbox-btn>
             </div>
@@ -30,7 +30,7 @@
                 </v-text-field>
             </div>
         </div>
-        <v-btn class="mt-2" :loading="uploadFileLoading" text="upload" type="upload" block></v-btn>
+        <v-btn class="mt-4" :loading="uploadFileLoading" text="upload" type="upload" block></v-btn>
     </v-form>
     <v-checkbox label="copy text to the textfield above" v-model="copyToTextfield" hide-details></v-checkbox>
 
