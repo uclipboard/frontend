@@ -265,6 +265,7 @@ async function getHistory() {
         responesClipboardHostory = await sendHistoryRequest(currentPage.value)
     } catch (e) {
         handleNetworkError(e)
+        listLoading.value = false
         return
     }
     console.debug(responesClipboardHostory)

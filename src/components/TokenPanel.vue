@@ -4,10 +4,10 @@
       :type="visible ? 'text' : 'password'" q @click:append-inner="visible = !visible" label="token"></v-text-field>
     <div class="d-flex ga-4">
       <div class="flex-1-0">
-        <v-btn :loading="loading" text="update" type="submit" block></v-btn>
+        <v-btn :loading="loading" text="clear" @click="clear" block></v-btn>
       </div>
       <div class="flex-1-0">
-        <v-btn :loading="loading" text="clear" @click="clear" block></v-btn>
+        <v-btn :loading="loading" text="update" type="submit" block></v-btn>
       </div>
     </div>
   </v-form>
