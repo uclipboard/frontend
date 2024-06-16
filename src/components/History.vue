@@ -269,7 +269,12 @@ async function getHistory() {
     }
     console.debug(responesClipboardHostory)
     clipboardsHistory.value = []
-
+    if(responesClipboardHostory.history === null){
+        listLoading.value = false
+        snackbar("The page is empty, so reset page to 1.")
+        currentPage.value = 1
+        return  
+    }
     responesClipboardHostory.history.forEach(e => {
         clipboardsHistory.value.push(buildLocalClipboard(e))
     })
