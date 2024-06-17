@@ -42,7 +42,7 @@
         </div>
 
         <v-list-item v-for="i in clipboardsHistory" :prepend-icon="i.type == 'text' ? 'mdi-text-long' : 'mdi-file'"
-            :key="i" :title="`${i.hostname} | ${clipboardDateFormat(i.date)}`"
+            :key="i.id" :title="`${i.hostname} | ${clipboardDateFormat(i.date)}`"
             :subtitle="isOnlyWhitespace(i.content) ? '[invisible]' : i.content" @click="copy(i)" />
     </v-list>
     <Notice ref="noticeRef" />
@@ -50,7 +50,7 @@
 
 </template>
 <script setup>
-import { onMounted, onUnmounted, ref, watch } from 'vue';
+import { onMounted, onUnmounted, ref, watch, onRenderTracked } from 'vue';
 import Notice from './Notice'
 
 import config from '@/assets/config';
@@ -270,11 +270,11 @@ async function getHistory() {
     }
     console.debug(responesClipboardHostory)
     clipboardsHistory.value = []
-    if(responesClipboardHostory.history === null){
+    if (responesClipboardHostory.history === null) {
         listLoading.value = false
         snackbar("The page is empty, so reset page to 1.")
         currentPage.value = 1
-        return  
+        return
     }
     responesClipboardHostory.history.forEach(e => {
         clipboardsHistory.value.push(buildLocalClipboard(e))

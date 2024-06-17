@@ -1,12 +1,9 @@
 export function buildLocalClipboard(c) {
-    let val = {
-        content: c.content,
-        date: new Date(c.ts),
-        hostname: c.hostname,
-        type: c.content_type
-    }
-    return val
+    c.date = new Date(c.ts)
+    c.type = c.content_type
+    return c
 }
+
 export function buildRemoteClipboard(content, type = "text") {
     const requestClipboardData = {
         ts: new Date().getTime(),
@@ -44,11 +41,7 @@ export async function copyToClipoard(text) {
 }
 
 export function arrayIncludeAClipboard(arr, c) {
-    return arr.some(i => {
-        return i.content === c.content &&
-            i.date.getTime() == c.date.getTime() &&
-            i.hostname == c.hostname && i.type == c.type
-    })
+    return arr.some(i => i.id === c.id)
 }
 
 
