@@ -1,28 +1,29 @@
 <template>
 
-    <v-textarea label="clipboard text" v-model="inputText" counter clearable></v-textarea>
+    <v-textarea label="clipboard text" v-model="inputText" color="secondary" counter clearable></v-textarea>
     <div class="d-flex ga-4">
         <div class="flex-1-0">
-            <v-btn :loading="textActionLoading" text="push" @click="push" block></v-btn>
+            <v-btn :loading="textActionLoading" text="push" @click="push" color="primary" block></v-btn>
         </div>
         <div class="flex-1-0">
-            <v-btn :loading="textActionLoading" text="pull" @click="pull" block></v-btn>
+            <v-btn :loading="textActionLoading" text="pull" @click="pull" color="primary" block></v-btn>
         </div>
     </div>
 
     <v-form validate-on="submit lazy" class="mt-4" @submit.prevent="upload">
-        <v-file-input label="Select file" v-model="selectedFile" variant="solo" show-size></v-file-input>
+        <v-file-input label="Select file" v-model="selectedFile" variant="solo" color="secondary"
+            show-size></v-file-input>
         <div class="d-flex ">
             <div class="align-self-center">
-                <v-checkbox-btn v-model="uploadFileWithLifeTime"></v-checkbox-btn>
+                <v-checkbox-btn v-model="uploadFileWithLifeTime" color="secondary"></v-checkbox-btn>
             </div>
             <div class="flex-1-0">
                 <v-text-field :disabled="!uploadFileWithLifeTime" label="file lifetime" v-model="fileLifetime"
-                    variant="outlined" hide-details>
+                    variant="outlined" color="secondary" hide-details>
                     <template v-slot:prepend>
                         <v-tooltip location="bottom" open-on-click>
                             <template v-slot:activator="{ props }">
-                                <v-icon v-bind="props" icon="mdi-help-circle-outline"></v-icon>
+                                <v-icon v-bind="props" color="info" icon="mdi-help-circle-outline"></v-icon>
                             </template>
                             supported suffix: s,m,h,d default:s
                         </v-tooltip>
@@ -30,9 +31,10 @@
                 </v-text-field>
             </div>
         </div>
-        <v-btn class="mt-4" :loading="uploadFileLoading" text="upload" type="upload" block></v-btn>
+        <v-btn class="mt-4" :loading="uploadFileLoading" text="upload" type="upload" color="primary" block></v-btn>
     </v-form>
-    <v-checkbox label="copy text to the textfield above" v-model="copyToTextfield" hide-details></v-checkbox>
+    <v-checkbox label="copy text to the textfield above" color="secondary" v-model="copyToTextfield"
+        hide-details></v-checkbox>
 
     <v-pagination v-model="currentPage" :length="pageCount" rounded="circle"></v-pagination>
     <v-list lines="one" class="mt-4">
@@ -50,7 +52,7 @@
 
 </template>
 <script setup>
-import { onMounted, onUnmounted, ref, watch, onRenderTracked } from 'vue';
+import { onMounted, onUnmounted, ref, watch } from 'vue';
 import Notice from './Notice'
 
 import config from '@/assets/config';

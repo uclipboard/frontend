@@ -1,13 +1,14 @@
 <template>
   <v-form validate-on="submit lazy" @submit.prevent="submit">
-    <v-text-field v-model="token" :rules="rules" :append-inner-icon="visible ? 'mdi-eye' : 'mdi-eye-off'"
-      :type="visible ? 'text' : 'password'" q @click:append-inner="visible = !visible" label="token"></v-text-field>
+    <v-text-field v-model="token" color="secondary" :rules="rules"
+      :append-inner-icon="visible ? 'mdi-eye' : 'mdi-eye-off'" :type="visible ? 'text' : 'password'"
+      @click:append-inner="visible = !visible" label="token"></v-text-field>
     <div class="d-flex ga-4">
       <div class="flex-1-0">
-        <v-btn :loading="loading" text="clear" @click="clear" block></v-btn>
+        <v-btn :loading="loading" text="clear" color="primary" @click="clear" block></v-btn>
       </div>
       <div class="flex-1-0">
-        <v-btn :loading="loading" text="update" type="submit" block></v-btn>
+        <v-btn :loading="loading" text="update" color="primary" type="submit" block></v-btn>
       </div>
     </div>
   </v-form>
@@ -31,15 +32,18 @@ async function submit(event) {
   loading.value = true
 
   const results = await event
-  if (results["valid"]) {
-    let encryptSalt = config.ENCRYPT_SALT
-    let md5_1 = MD5(encryptSalt + token.value)
-    let md5_2 = MD5(encryptSalt + md5_1)
-    let md5_3 = MD5(encryptSalt + md5_2)
-    console.log(`update token ${md5_3}`)
-    localStorage.setItem(config.LOCAL_STORAGE_TOKEN_NAME, md5_3)
-    token.value = ""
+  console.log(results.valid)
+  if (!results.valid) {
+    loading.value = false
+    return
   }
+  let encryptSalt = config.ENCRYPT_SALT
+  let md5_1 = MD5(encryptSalt + token.value)
+  let md5_2 = MD5(encryptSalt + md5_1)
+  let md5_3 = MD5(encryptSalt + md5_2)
+  console.log(`update token ${md5_3}`)
+  localStorage.setItem(config.LOCAL_STORAGE_TOKEN_NAME, md5_3)
+  token.value = ""
   noticeRef.value.openSnackbar("update token completed.")
   loading.value = false
 
